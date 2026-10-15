@@ -38,12 +38,9 @@ The models the knowledge service runs (embeddings `BAAI/bge-large-en-v1.5`, the 
 ```bash
 REL=https://api.github.com/repos/illuma-ai/kestrel-drift-4821/releases/tags/knowledge-models-v2026.10.15
 mkdir knowledge-models-download && cd knowledge-models-download
-curl -s "$REL" | grep -oE '"url": *"https://api.github.com/repos/[^"]*/releases/assets/[0-9]+"|"name": *"[^"]+"' \
-  | paste - - | grep -E 'part[0-9]+|SHA256SUMS' | while read -r line; do
-    url=$(printf '%s' "$line" | grep -oE 'https://api.github.com/[^"]+/assets/[0-9]+')
-    name=$(printf '%s' "$line" | grep -oE '"name": *"[^"]+"' | cut -d'"' -f4)
-    curl -sL -H "Accept: application/octet-stream" -o "$name" "$url"
-  done
+# the release's asset list comes from the API; each asset is fetched by its download URL
+curl -s "$REL" | grep -oE '"browser_download_url": *"[^"]+"' | cut -d'"' -f4   | while read -r url; do curl -sSL -O "$url"; done
+ls -l                                                       # knowledge-models.zip.part00..02 and SHA256SUMS
 sha256sum -c SHA256SUMS --ignore-missing                  # the three parts
 cat knowledge-models.zip.part* > knowledge-models.zip      # merge (Windows: copy /b part00+part01+part02 knowledge-models.zip)
 grep ' knowledge-models.zip$' SHA256SUMS | sha256sum -c -  # the merged zip
